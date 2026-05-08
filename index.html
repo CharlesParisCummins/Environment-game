@@ -1,0 +1,950 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Environmental Awareness Challenge</title>
+
+<style>
+
+body{
+  font-family:Arial,sans-serif;
+  background:#d9f7be;
+  margin:0;
+  padding:6px;
+  min-height:100vh;
+  overflow:auto;
+}
+
+h1{
+  text-align:center;
+  margin:4px 0;
+  font-size:22px;
+}
+
+h2{
+  text-align:center;
+  margin:4px 0;
+  color:#2563eb;
+  font-size:18px;
+}
+
+.description{
+  text-align:center;
+  background:white;
+  padding:8px;
+  border-radius:10px;
+  margin-bottom:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  font-size:14px;
+}
+
+button, select{
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#2563eb;
+  color:white;
+  font-size:14px;
+}
+
+.topbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  padding:8px;
+  background:white;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+.main{
+  display:grid;
+  grid-template-columns:1fr 2fr;
+  gap:10px;
+  min-height:500px;
+  margin-top:6px;
+}
+
+.labels{
+  background:white;
+  padding:6px;
+  border-radius:10px;
+  overflow-y:auto;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+.images{
+  background:white;
+  padding:6px;
+  border-radius:10px;
+  overflow-y:auto;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+.label{
+  padding:12px;
+  margin-bottom:6px;
+  background:#e0e7ff;
+  border-radius:8px;
+  text-align:center;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.label.selected{
+  background:#2563eb;
+  color:white;
+}
+
+.image-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.image-box{
+  border:2px dashed #bbb;
+  border-radius:8px;
+  min-height:130px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:4px;
+  transition:.2s;
+}
+
+.image-box img{
+  max-width:100%;
+  height:70px;
+  pointer-events:none;
+}
+
+.image-box span{
+  font-size:13px;
+  margin-top:4px;
+}
+
+.correct{
+  background:#dcfce7;
+  border-color:#22c55e;
+}
+
+.wrong{
+  background:#fee2e2;
+  border-color:#ef4444;
+}
+
+.leaderboard{
+  margin-top:6px;
+  background:white;
+  padding:8px;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+  max-height:320px;
+  overflow-y:auto;
+}
+
+#nextLevelBtn{
+  display:none;
+  margin:auto;
+  margin-top:8px;
+}
+
+@media(max-width:900px){
+
+  body{
+    overflow:auto;
+  }
+
+  .main{
+    grid-template-columns:1fr 1fr;
+    height:58vh;
+  }
+
+  .image-grid{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .image-box{
+    min-height:120px;
+  }
+
+  .image-box img{
+    height:60px;
+  }
+
+  .label{
+    font-size:14px;
+    padding:10px;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🌍 Environmental Awareness Challenge</h1>
+
+<h2 id="levelTitle">Level 1</h2>
+
+<div id="levelDescription" class="description"></div>
+
+<button id="startBtn">Start Challenge</button>
+
+<div class="topbar">
+
+  <div>
+    <strong id="levelText">Level</strong>: <span id="levelDisplay">1</span> |
+    <strong id="scoreText">Score</strong>: <span id="score">0</span> |
+    <strong id="wrongText">Wrong</strong>: <span id="wrongCount">0</span> |
+    <strong id="timeText">Time</strong>: <span id="timer">0</span>s
+  </div>
+
+  <div>
+
+    <select id="languageSelect">
+      <option value="en">English</option>
+      <option value="nl">Nederlands</option>
+    </select>
+
+    <button onclick="resetWrong()" id="resetWrongBtn">Reset wrong</button>
+    <button onclick="resetLevel()" id="resetLevelBtn">Reset level</button>
+    <button onclick="resetGame()" id="resetGameBtn">Reset game</button>
+
+  </div>
+
+</div>
+
+<div class="main">
+
+  <div class="labels" id="labelContainer"></div>
+
+  <div class="images">
+    <div class="image-grid" id="imageGrid"></div>
+  </div>
+
+</div>
+
+<button id="nextLevelBtn">Next Level</button>
+
+<div class="leaderboard">
+  <h3 id="leaderboardTitle">🏆 Leaderboard</h3>
+  <ol id="leaderboard"></ol>
+</div>
+
+<audio id="correctSound" src="sounds/correct.mp3"></audio>
+<audio id="wrongSound" src="sounds/wrong.mp3"></audio>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbyZRFOgelB8jSDXQharzWazFyf3Y593BXB6W0Yg9JeuLPTnHAhciUoEdVF0aYdBks42/exec";
+
+let currentLanguage = "en";
+
+const uiText = {
+
+en:{
+level:"Level",
+score:"Score",
+wrong:"Wrong",
+time:"Time",
+start:"Start Challenge",
+next:"Next Level",
+resetWrong:"Reset wrong",
+resetLevel:"Reset level",
+resetGame:"Reset game",
+leaderboard:"🏆 Leaderboard",
+enterName:"Challenge complete! Enter your name:",
+saved:"🌍 Score saved!"
+},
+
+nl:{
+level:"Level",
+score:"Score",
+wrong:"Fouten",
+time:"Tijd",
+start:"Start Challenge",
+next:"Volgend Level",
+resetWrong:"Reset fouten",
+resetLevel:"Reset level",
+resetGame:"Reset spel",
+leaderboard:"🏆 Klassement",
+enterName:"Challenge voltooid! Geef je naam:",
+saved:"🌍 Score opgeslagen!"
+}
+
+};
+
+const translations = {
+
+/* ===== LEVEL 1 ===== */
+
+plastic_bottle:{en:"Plastic Bottle",nl:"Plastic Fles"},
+pizza_box:{en:"Pizza Box",nl:"Pizzadoos"},
+banana_peel:{en:"Banana Peel",nl:"Bananenschil"},
+battery:{en:"Battery",nl:"Batterij"},
+glass_bottle:{en:"Glass Bottle",nl:"Glazen Fles"},
+spray_can:{en:"Spray Can",nl:"Spuitbus"},
+coffee_capsule:{en:"Coffee Capsule",nl:"Koffiecapsule"},
+used_motor_oil:{en:"Used Motor Oil",nl:"Gebruikte Motorolie"},
+
+pmd_bag:{en:"PMD Bag",nl:"PMD Zak"},
+paper_bin:{en:"Paper Bin",nl:"Papierbak"},
+organic_waste:{en:"Organic Waste",nl:"Organisch Afval"},
+hazardous_waste:{en:"Hazardous Waste",nl:"Gevaarlijk Afval"},
+glass_bin:{en:"Glass Bin",nl:"Glasbak"},
+
+/* ===== LEVEL 2 ===== */
+
+factory_smoke:{en:"Factory Smoke",nl:"Fabrieksrook"},
+oil_spill:{en:"Oil Spill",nl:"Olieramp"},
+pesticides:{en:"Pesticides",nl:"Pesticiden"},
+acid_rain:{en:"Acid Rain",nl:"Zure Regen"},
+fertilizer_runoff:{en:"Fertilizer Runoff",nl:"Mestafvoer"},
+sewage_water:{en:"Sewage Water",nl:"Rioolwater"},
+
+air_pollution:{en:"Air Pollution",nl:"Luchtvervuiling"},
+water_pollution:{en:"Water Pollution",nl:"Watervervuiling"},
+soil_pollution:{en:"Soil Pollution",nl:"Bodemvervuiling"},
+
+/* ===== LEVEL 3 ===== */
+
+solar_panels:{en:"Solar Panels",nl:"Zonnepanelen"},
+wind_turbine:{en:"Wind Turbine",nl:"Windturbine"},
+coal_plant:{en:"Coal Plant",nl:"Koolcentrale"},
+gas_power_plant:{en:"Gas Power Plant",nl:"Gascentrale"},
+hydroelectric_dam:{en:"Hydroelectric Dam",nl:"Waterkrachtcentrale"},
+nuclear_plant:{en:"Nuclear Plant",nl:"Kerncentrale"},
+geothermal:{en:"Geothermal",nl:"Geothermische Energie"},
+biomass:{en:"Biomass",nl:"Biomassa"},
+
+renewable:{en:"Renewable",nl:"Hernieuwbaar"},
+non_renewable:{en:"Non-renewable",nl:"Niet-hernieuwbaar"},
+
+/* ===== LEVEL 4 ===== */
+
+airplane_travel:{en:"Airplane Travel",nl:"Vliegreis"},
+bicycle:{en:"Bicycle",nl:"Fiets"},
+electric_car:{en:"Electric Car",nl:"Elektrische Wagen"},
+beef_production:{en:"Beef Production",nl:"Rundvleesproductie"},
+public_transport:{en:"Public Transport",nl:"Openbaar Vervoer"},
+led_lighting:{en:"LED Lighting",nl:"LED Verlichting"},
+fast_fashion:{en:"Fast Fashion",nl:"Fast Fashion"},
+solar_home:{en:"Solar Home",nl:"Huis met Zonnepanelen"},
+
+high_co2:{en:"High CO₂",nl:"Hoge CO₂"},
+medium_co2:{en:"Medium CO₂",nl:"Gemiddelde CO₂"},
+low_co2:{en:"Low CO₂",nl:"Lage CO₂"},
+
+/* ===== LEVEL 5 ===== */
+
+pet_symbol:{
+  en:"PET Symbol",
+  nl:"PET Symbool"
+},
+
+hdpe_symbol:{
+  en:"HDPE Symbol",
+  nl:"HDPE Symbool"
+},
+
+battery_symbol:{
+  en:"Battery Symbol",
+  nl:"Batterij Symbool"
+},
+
+glass_recycle:{
+  en:"Glass Recycle",
+  nl:"Glas Recyclage"
+},
+
+compostable_logo:{
+  en:"Compostable Logo",
+  nl:"Composteerbaar Logo"
+},
+
+e_waste_symbol:{
+  en:"E-waste Symbol",
+  nl:"E-afval Symbool"
+},
+
+aluminium_recycle:{
+  en:"Aluminium Recycle",
+  nl:"Aluminium Recyclage"
+},
+
+plastic:{en:"Plastic",nl:"Plastic"},
+hazardous:{en:"Hazardous",nl:"Gevaarlijk"},
+glass:{en:"Glass",nl:"Glas"},
+organic:{en:"Organic",nl:"Organisch"},
+electronics:{en:"Electronics",nl:"Elektronica"},
+metal:{en:"Metal",nl:"Metaal"}
+
+};
+
+const levels = [
+
+{
+title:{en:"♻️ Waste Sorting",nl:"♻️ Afval Sorteren"},
+description:{
+en:"Match each waste item to the correct recycling category.",
+nl:"Koppel elk afvalitem aan de juiste afvalcategorie."
+},
+targets:[
+"pmd_bag",
+"paper_bin",
+"organic_waste",
+"hazardous_waste",
+"glass_bin"
+],
+matches:{
+plastic_bottle:"pmd_bag",
+pizza_box:"paper_bin",
+banana_peel:"organic_waste",
+battery:"hazardous_waste",
+glass_bottle:"glass_bin",
+spray_can:"hazardous_waste",
+coffee_capsule:"pmd_bag",
+used_motor_oil:"hazardous_waste"
+}
+},
+
+{
+title:{en:"🌫️ Pollution",nl:"🌫️ Vervuiling"},
+description:{
+en:"Identify whether each pollution source affects air, water, or soil.",
+nl:"Bepaal of de vervuiling lucht, water of bodem aantast."
+},
+targets:[
+"air_pollution",
+"water_pollution",
+"soil_pollution"
+],
+matches:{
+factory_smoke:"air_pollution",
+oil_spill:"water_pollution",
+pesticides:"soil_pollution",
+acid_rain:"air_pollution",
+fertilizer_runoff:"water_pollution",
+sewage_water:"water_pollution"
+}
+},
+
+{
+title:{en:"⚡ Renewable Energy",nl:"⚡ Hernieuwbare Energie"},
+description:{
+en:"Decide whether each energy source is renewable or non-renewable.",
+nl:"Bepaal welke energiebronnen hernieuwbaar zijn."
+},
+targets:[
+"renewable",
+"non_renewable"
+],
+matches:{
+solar_panels:"renewable",
+wind_turbine:"renewable",
+coal_plant:"non_renewable",
+gas_power_plant:"non_renewable",
+hydroelectric_dam:"renewable",
+nuclear_plant:"non_renewable",
+geothermal:"renewable",
+biomass:"renewable"
+}
+},
+
+{
+title:{en:"🌍 CO₂ Footprint",nl:"🌍 CO₂ Voetafdruk"},
+description:{
+en:"Match each activity to its CO₂ impact level.",
+nl:"Koppel elke activiteit aan de juiste CO₂ impact."
+},
+targets:[
+"high_co2",
+"medium_co2",
+"low_co2"
+],
+matches:{
+airplane_travel:"high_co2",
+bicycle:"low_co2",
+electric_car:"medium_co2",
+beef_production:"high_co2",
+public_transport:"low_co2",
+led_lighting:"low_co2",
+fast_fashion:"high_co2",
+solar_home:"low_co2"
+}
+},
+
+{
+title:{en:"♻️ Recycling Symbols",nl:"♻️ Recyclage Symbolen"},
+description:{
+en:"Match each recycling symbol to the correct material category.",
+nl:"Koppel elk recyclagesymbool aan de juiste categorie."
+},
+targets:[
+"plastic",
+"hazardous",
+"glass",
+"organic",
+"electronics",
+"metal"
+],
+matches:{
+pet_symbol:"plastic",
+hdpe_symbol:"plastic",
+battery_symbol:"hazardous",
+glass_recycle:"glass",
+compostable_logo:"organic",
+e_waste_symbol:"electronics",
+aluminium_recycle:"metal"
+}
+}
+
+];
+
+let currentLevel = 0;
+let selectedItem = null;
+let score = 0;
+let wrong = 0;
+let time = 0;
+let timer;
+
+const labelContainer = document.getElementById("labelContainer");
+const imageGrid = document.getElementById("imageGrid");
+
+function updateUILanguage(){
+
+document.getElementById("levelText").textContent=uiText[currentLanguage].level;
+document.getElementById("scoreText").textContent=uiText[currentLanguage].score;
+document.getElementById("wrongText").textContent=uiText[currentLanguage].wrong;
+document.getElementById("timeText").textContent=uiText[currentLanguage].time;
+document.getElementById("startBtn").textContent=uiText[currentLanguage].start;
+document.getElementById("nextLevelBtn").textContent=uiText[currentLanguage].next;
+document.getElementById("resetWrongBtn").textContent=uiText[currentLanguage].resetWrong;
+document.getElementById("resetLevelBtn").textContent=uiText[currentLanguage].resetLevel;
+document.getElementById("resetGameBtn").textContent=uiText[currentLanguage].resetGame;
+document.getElementById("leaderboardTitle").textContent=uiText[currentLanguage].leaderboard;
+
+}
+
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+const j=Math.floor(Math.random()*(i+1));
+[a[i],a[j]]=[a[j],a[i]];
+}
+}
+
+function startTimer(){
+
+clearInterval(timer);
+
+timer=setInterval(()=>{
+time++;
+document.getElementById("timer").textContent=time;
+},1000);
+
+}
+
+function loadLevel(){
+
+selectedItem=null;
+
+const level=levels[currentLevel];
+
+document.getElementById("levelTitle").textContent=
+level.title[currentLanguage];
+
+document.getElementById("levelDescription").textContent=
+level.description[currentLanguage];
+
+document.getElementById("levelDisplay").textContent=
+currentLevel+1;
+
+buildLabels(level);
+buildTargets(level);
+
+}
+
+function buildLabels(level){
+
+labelContainer.innerHTML="";
+
+const items=Object.keys(level.matches);
+
+shuffle(items);
+
+items.forEach(item=>{
+
+const div=document.createElement("div");
+
+div.className="label";
+
+const translated=
+translations[item]
+? translations[item][currentLanguage]
+: item;
+
+if(currentLevel === 4){
+
+div.innerHTML=`
+<img 
+src="images/${item}.jpg"
+onerror="this.style.display='none'"
+style="
+width:55px;
+height:55px;
+object-fit:contain;
+display:block;
+margin:auto;
+margin-bottom:6px;
+">
+<div>${translated}</div>
+`;
+
+}else{
+
+div.textContent=translated;
+
+}
+
+div.dataset.item=item;
+
+div.onclick=()=>{
+
+document.querySelectorAll(".label")
+.forEach(x=>x.classList.remove("selected"));
+
+div.classList.add("selected");
+
+selectedItem=item;
+
+};
+
+labelContainer.appendChild(div);
+
+});
+
+}
+
+function buildTargets(level){
+
+imageGrid.innerHTML="";
+
+const shuffled=[...level.targets];
+
+shuffle(shuffled);
+
+shuffled.forEach(target=>{
+
+const box=document.createElement("div");
+
+box.className="image-box";
+
+const translated=
+translations[target]
+? translations[target][currentLanguage]
+: target;
+
+box.innerHTML=`
+
+<img
+src="images/${target}.jpg"
+onerror="this.style.display='none'"
+style="
+max-width:100%;
+height:70px;
+object-fit:contain;
+display:block;
+margin:auto;
+margin-bottom:6px;
+">
+
+<span>${translated}</span>
+
+`;
+
+box.onclick=()=>handleAnswer(box,target);
+
+imageGrid.appendChild(box);
+
+});
+
+}
+
+function handleAnswer(box,target){
+
+if(!selectedItem) return;
+
+const level=levels[currentLevel];
+
+const correctTarget=level.matches[selectedItem];
+
+if(correctTarget===target){
+
+box.classList.remove("wrong");
+box.classList.add("correct");
+
+document.querySelector(`.label[data-item="${selectedItem}"]`)?.remove();
+
+selectedItem=null;
+
+score++;
+
+document.getElementById("score").textContent=score;
+
+const sound=document.getElementById("correctSound").cloneNode();
+
+sound.volume=0.7;
+
+sound.play();
+
+checkLevelComplete();
+
+}else{
+
+box.classList.add("wrong");
+
+wrong++;
+
+document.getElementById("wrongCount").textContent=wrong;
+
+const sound=document.getElementById("wrongSound").cloneNode();
+
+sound.volume=0.7;
+
+sound.play();
+
+}
+
+}
+
+function checkLevelComplete(){
+
+const remaining=document.querySelectorAll(".label");
+
+if(remaining.length===0){
+
+if(currentLevel < levels.length-1){
+
+document.getElementById("nextLevelBtn").style.display="block";
+
+}else{
+
+finishGame();
+
+}
+
+}
+
+}
+
+document.getElementById("nextLevelBtn").onclick=()=>{
+
+currentLevel++;
+
+loadLevel();
+
+document.getElementById("nextLevelBtn").style.display="none";
+
+};
+
+function finishGame(){
+
+clearInterval(timer);
+
+const name=prompt(uiText[currentLanguage].enterName);
+
+if(!name) return;
+
+fetch(API_URL,{
+method:"POST",
+headers:{
+"Content-Type":"text/plain;charset=utf-8"
+},
+body:JSON.stringify({
+name,
+score,
+wrong,
+time
+})
+})
+.then(()=>{
+loadLeaderboard();
+alert(uiText[currentLanguage].saved);
+});
+
+}
+
+function loadLeaderboard(){
+
+fetch(API_URL + "?t=" + new Date().getTime())
+
+.then(response => response.text())
+
+.then(text => {
+
+console.log("RAW RESPONSE:", text);
+
+let data;
+
+try{
+
+data = JSON.parse(text);
+
+}catch(err){
+
+console.error("JSON parse error:", err);
+
+document.getElementById("leaderboard").innerHTML =
+"<li>Invalid leaderboard data</li>";
+
+return;
+
+}
+
+const ol = document.getElementById("leaderboard");
+
+ol.innerHTML = "";
+
+/* ===== FILTER INVALID ===== */
+
+data = data.filter(e =>
+e &&
+e.name &&
+e.score != null &&
+e.time != null &&
+e.wrong != null
+);
+
+/* ===== SORT ===== */
+
+data.sort((a,b)=>
+
+b.score - a.score ||
+
+a.wrong - b.wrong ||
+
+a.time - b.time
+
+);
+
+/* ===== TOP 10 ===== */
+
+data.slice(0,10).forEach((e,index)=>{
+
+const li = document.createElement("li");
+
+li.innerHTML = `
+<strong>#${index+1}</strong>
+ — ${e.name}
+ | Score: ${e.score}
+ | Wrong: ${e.wrong}
+ | ${e.time}s
+`;
+
+ol.appendChild(li);
+
+});
+
+/* ===== EMPTY ===== */
+
+if(data.length === 0){
+
+ol.innerHTML = "<li>No scores yet</li>";
+
+}
+
+})
+
+.catch(err=>{
+
+console.error("Leaderboard fetch error:", err);
+
+document.getElementById("leaderboard").innerHTML =
+"<li>Leaderboard failed to load</li>";
+
+});
+
+}
+
+window.resetWrong=()=>{
+
+document.querySelectorAll(".wrong")
+.forEach(x=>x.classList.remove("wrong"));
+
+};
+
+window.resetLevel=()=>{
+
+loadLevel();
+
+};
+
+window.resetGame=()=>{
+
+clearInterval(timer);
+
+score=0;
+wrong=0;
+time=0;
+currentLevel=0;
+
+document.getElementById("score").textContent=0;
+document.getElementById("wrongCount").textContent=0;
+document.getElementById("timer").textContent=0;
+
+startTimer();
+
+loadLevel();
+
+};
+
+document.getElementById("languageSelect")
+.addEventListener("change",e=>{
+
+currentLanguage=e.target.value;
+
+updateUILanguage();
+
+loadLevel();
+
+});
+
+document.getElementById("startBtn").onclick=()=>{
+
+score=0;
+wrong=0;
+time=0;
+currentLevel=0;
+
+document.getElementById("score").textContent=0;
+document.getElementById("wrongCount").textContent=0;
+document.getElementById("timer").textContent=0;
+
+startTimer();
+
+updateUILanguage();
+
+loadLevel();
+
+loadLeaderboard();
+
+document.getElementById("startBtn").style.display="none";
+
+};
+
+updateUILanguage();
+
+</script>
+
+</body>
+</html>
+```
